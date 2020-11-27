@@ -53,6 +53,7 @@ class Assessment(db.Model):
     question=db.Column(db.String(500))
     correct_answer=db.Column(db.String(40))
     answers=db.Column(db.String(200))
+    set_number=db.Column(db.Integer)
 
 class UserProgress(db.Model):
     __tablename__ = "UserProgress"
@@ -142,7 +143,10 @@ def pptgen():
     ppt_path=x['ppt_path']
     pdf_path=x['pdf_path']
     subtopic_mapping=x['mapping']
-    print("xxxxxxx    ",pdf_path,"      xxxxxxx")
+    question_content=x['question_content']
+    print("######################")
+    print(question_content)
+    print("######################")
     cv.PPTtoPDF(ppt_path,pdf_path)
     new_tutorial=Tutorial()
     setattr(new_tutorial,'author',username)
@@ -154,7 +158,7 @@ def pptgen():
     setattr(new_tutorial,'Image_Link',link)
     db.session.add(new_tutorial)
     db.session.commit()
-    return {'ppt_path':ppt_path, 'pdf_path':pdf_path,'subtopic_mapping':subtopic_mapping,'tutorial_id':new_tutorial.Tutorial_id}
+    return {'ppt_path':ppt_path, 'pdf_path':pdf_path,'subtopic_mapping':subtopic_mapping,'tutorial_id':new_tutorial.Tutorial_id,'question_content':question_content}
 
 @app.route('/return-files',methods=["GET"])
 def return_files_tut():
@@ -209,22 +213,26 @@ def login():
 @app.route('/assessments', methods=['POST'])
 def assessments():
     print(request.get_json())
-    text=request.get_json()['data']
+    sets=request.get_json()['data']
     tid=request.get_json()['id']
-    print("$$$$$$$$$$$$$$$   ",text,"   $$$$$$$$$$$$$$$$$$$$$")
-    qa_module=qa.question_ans_module(text)
-    x={'mcq':qa_module.mcq_question()}
-    print(x)
-    for i in range(len(x['mcq'])):
-        new_assessment=Assessment()
-        setattr(new_assessment,'Tutorial_id',tid)
-        setattr(new_assessment,'Question_no',str(tid)+"_"+str(i+1))
-        setattr(new_assessment,'correct_answer',x['mcq'][i]["answer"])
-        setattr(new_assessment,'answers',str(x['mcq'][i]['options']))
-        setattr(new_assessment,'question',x['mcq'][i]['question_statement'])
-        db.session.add(new_assessment)
-        db.session.commit()
-    return x
+    all_questions={'mcq':[]}
+    for j in sets:
+        #print("$$$$$$$$$$$$$$$   ",sets,"   $$$$$$$$$$$$$$$$$$$$$")
+        qa_module=qa.question_ans_module(sets[j])
+        x={'mcq':qa_module.mcq_question()}
+        #print(x)
+        for i in range(len(x['mcq'])):
+            new_assessment=Assessment()
+            setattr(new_assessment,'Tutorial_id',tid)
+            setattr(new_assessment,'Question_no',str(tid)+"_"+str(j)+"_"+str(i+1))
+            setattr(new_assessment,'correct_answer',x['mcq'][i]["answer"])
+            setattr(new_assessment,'answers',str(x['mcq'][i]['options']))
+            setattr(new_assessment,'question',x['mcq'][i]['question_statement'])
+            setattr(new_assessment,'set_number',j)
+            db.session.add(new_assessment)
+            db.session.commit()
+            all_questions['mcq'].append(x['mcq'][i])
+    return all_questions
 
 @app.route('/teacher_profile',methods=['POST'])
 def gettut():
@@ -298,7 +306,55 @@ def set_answers():
     db.session.add(new_entry)
     db.session.commit()  
     return {},200  
-    
+
+@app.route('/get_question_sets',methods=['POST'])
+def get_question_sets():
+    tid=request.get_json()['tid']
+    setid=request.get_json()['setid']
+    if setid=='All':
+        x=db.session.query(Assessment).filter(Assessment.Tutorial_id==tid).all()
+    else:
+        x=db.session.query(Assessment).filter(Assessment.Tutorial_id==tid,Assessment.set_number==setid).all()
+    questions=[]
+    for mcq in x:
+        temp={}
+        temp["question"]=mcq.question
+        temp["answers"]=eval(mcq.answers)
+        temp["correct_answer"]=mcq.correct_answer
+        questions.append(temp)
+    print(questions)
+    return json.dumps(questions)
+
+@app.route('/get_tutorial_info',methods=['POST'])
+def get_tutorial_info():
+    tid=request.get_json()['tid']
+    x=db.session.query(Tutorial).filter(Tutorial.Tutorial_id==tid).all()[0]
+    return {'pdf_path':x.pdf_path,'ppt_path':x.ppt_path,'subtopic_mapping':eval(x.subtopic_mapping)}
+
+@app.route('/check_set_attempted',methods=['POST'])
+def check_set_attempted():
+    tid=request.get_json()['tid']
+    username=request.get_json()['username']
+    set_number=request.get_json()['set_number']
+    # x=db.session.query(UserProgress).filter(UserProgress.username==username,UserProgress.tid==tid).all()
+    y=UserProgress.query.join(Assessment,Assessment.Question_no==UserProgress.question_no).add_columns(Assessment.correct_answer,UserProgress.answer,Assessment.question,Assessment.answers).filter(UserProgress.username==username,UserProgress.tid==tid,Assessment.set_number==set_number).all()
+    questions=[]
+    if y:
+        score=0
+        for question in y:
+            temp={}
+            if question.correct_answer==question.answer:
+                score+=1
+            temp['question']=question.question
+            temp['answers']=eval(question.answers)
+            temp['correct_answer']=question.correct_answer
+            temp['user_answer']=question.answer
+            questions.append(temp)
+        print({"attempted":True,"score":score,"total":len(y)})
+        return {"attempted":True,"score":score,"total":len(y),"questions":questions}
+    else:
+        print({"attempted":False})
+        return {"attempted":False}
 
 @app.after_request
 def add_header(r):

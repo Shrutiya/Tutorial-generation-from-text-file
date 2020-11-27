@@ -60,8 +60,8 @@ class Tutorial extends React.Component {
 
       {/* </form> */}
       <br></br>
-      <Link to={{pathname:"/ppt",pdf_path:this.state.pdf_path,mapping:this.state.subtopic_mapping,ppt_path:this.state.ppt_path,mcq:this.state.mcq}}>
-      <button  className="btn-secondary btn-lg">Create PPT</button>
+      <Link to={{pathname:"/ppt",pdf_path:this.state.pdf_path,mapping:this.state.subtopic_mapping,ppt_path:this.state.ppt_path,mcq:this.state.mcq,tid:this.state.tutorial_id}}>
+      <button  className="btn-secondary btn-lg">Create Tutorial</button>
       {/* onClick={this.createPPT} */}
       </Link>
       <br/><br/>

@@ -6,17 +6,28 @@ class Assessment extends Component {
     
          this.state = {
            boolean_question: {},
-           mcq:this.props.location.data
-          
+           mcq:'',
+           tid:this.props.location.tid
         };
     
-        console.log(this.state.mcq)
+        console.log(this.state)
         this.onSubmit=this.onSubmit.bind(this);
         this.shuffle=this.shuffle.bind(this);
       }
-      componentDidMount() {
-        
-        //this.gen_questions();
+      componentWillMount() {
+        fetch('http://localhost:5000/get_question_sets', {
+      method: 'POST',
+      body:JSON.stringify({'tid':this.props.location.tid,'setid':'All'}),
+      headers: new Headers({
+        "content-type": "application/json"
+      })
+    }).then((response) => {
+      response.json().then((body) => {
+        console.log(body);
+        this.setState({mcq:body});
+        console.log(this.state);
+    });
+    })
      }
     
   shuffle(array) {
@@ -58,9 +69,11 @@ class Assessment extends Component {
   }
 
   render() {
+    // console.log(this.state);
+    if(this.state.mcq){
     for(var i=0;i<Object.keys(this.state.mcq).length;i++){
       console.log("hello");
-      this.state.mcq[i]["options"]=this.shuffle(this.state.mcq[i]["options"]);
+      this.state.mcq[i]["answers"]=this.shuffle(this.state.mcq[i]["answers"]);
     }
     //   this.gen_questions()
     return (
@@ -72,10 +85,10 @@ class Assessment extends Component {
         Object.keys(this.state.mcq).map((key, index) => ( 
             <div className="card card-body no-gutters" key={index} style={{width:"100%",backgroundColor:"#A9A9A9", marginBottom:"0 !important", height:"10px", padding:"0 !important"}}>
            <div className="col-sm-10 mx-auto">
-          <h3 className="card-body">{index+1}) {this.state.mcq[key]["question_statement"]}</h3> 
+          <h3 className="card-body">{index+1}) {this.state.mcq[key]["question"]}</h3> 
           {
-          this.state.mcq[key]["options"].map((option,index1) => (
-            <div style={{color: option===this.state.mcq[key]["answer"]? 'green': 'black', textAlign: 'left', fontSize:'4vh' }}>
+          this.state.mcq[key]["answers"].map((option,index1) => (
+            <div style={{color: option===this.state.mcq[key]["correct_answer"]? 'green': 'black', textAlign: 'left', fontSize:'4vh' }}>
               <input type="radio" name={index} value={option} disabled="True"/>  {option}
             </div>)
           )}
@@ -90,6 +103,10 @@ class Assessment extends Component {
     </div>
     )
   }
+else{
+  return null;
+}
+}
 }
 
 export default Assessment

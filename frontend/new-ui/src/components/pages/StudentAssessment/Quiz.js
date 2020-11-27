@@ -17,6 +17,7 @@ function Quiz(props) {
             questionId={props.questionId}
             correct_answer={props.correct_answer}
             onAnswerSelected={props.onAnswerSelected}
+            status="not_taken"
           />
         );
       }

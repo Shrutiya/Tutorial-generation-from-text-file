@@ -1,0 +1,33 @@
+.class1{
+    font-size: 45px;
+}
+.class2{
+    font-size: 40px;
+}
+.class3{
+    font-size: 35px;
+}
+.class4{
+    font-size: 30px;
+}
+.class5{
+    font-size: 25px;
+}
+.class6{
+    font-size: 20px;
+}
+.button1{
+    margin-left: 100px;
+}
+.button2{
+    float: right;
+    margin-right: 100px;
+}
+.middle{
+    margin-left: 150px;
+    font-size: 30px;
+}
+.container1{
+    margin-left: 40px;
+    text-align: justify;
+}

@@ -25,6 +25,7 @@ class Upload extends Component{
         tutorial_id:0,
         tname:'',
         label:'',
+        question_content:''
      };
 
     this.handleUpload = this.handleUpload.bind(this);
@@ -71,11 +72,11 @@ class Upload extends Component{
     }).then((response) => {
       response.json().then((body) => {
         console.log(body)
-        this.setState({ ppt_path: body.ppt_path , pdf_path: body.pdf_path, subtopic_mapping:body.subtopic_mapping,tutorial_id:body.tutorial_id});
+        this.setState({ ppt_path: body.ppt_path , pdf_path: body.pdf_path, subtopic_mapping:body.subtopic_mapping,tutorial_id:body.tutorial_id,question_content:body.question_content});
         console.log(this.state.ppt_path,this.state.pdf_path);
         fetch('http://localhost:5000/assessments', {
       method: 'POST',
-      body:JSON.stringify({'data':this.state.text1,'id':this.state.tutorial_id}),
+      body:JSON.stringify({'data':this.state.question_content,'id':this.state.tutorial_id}),
       headers: new Headers({
         "content-type": "application/json"
       }),
@@ -110,7 +111,7 @@ class Upload extends Component{
       <br></br>
       <form onSubmit={this.handleSubmit}>
       <p className="is-size-5 has-text-black has-text-weight-medium has-text-centered">Name:  <input type="text" placeholder="Enter name of tutorial" name="tname" ref={(ref) => { this.tname = ref; }}/><br/></p><br></br>
-      <p className="is-size-5 has-text-black has-text-weight-medium has-text-centered">Label: <input type="text" placeholder="Enter label of tutorial" name="label" ref={(ref) => { this.label = ref; }}/><br/></p>
+      <p className="is-size-5 has-text-black has-text-weight-medium has-text-centered">Category: <input type="text" placeholder="Enter label of tutorial" name="label" ref={(ref) => { this.label = ref; }}/><br/></p>
     <div className="card has-text-centered">
       <img src="https://cdn4.iconfinder.com/data/icons/files-and-folders-thinline-icons-set/144/File_PDF-512.png"
         alt="upload" height="300px"/>

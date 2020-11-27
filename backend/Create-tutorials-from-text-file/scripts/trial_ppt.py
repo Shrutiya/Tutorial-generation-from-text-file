@@ -275,6 +275,9 @@ def pptgen(elements,filename,tid):
   #Used to add bullet points
   #tf = body_shape.text_frame
   pg_cnt=0
+  parent=-1
+  content=''
+  question_content={}
   if len(elements)>1:
     current=0
     next_element=1
@@ -283,16 +286,23 @@ def pptgen(elements,filename,tid):
                 pg_cnt+=1
                 heading=int(elements[current][2])
                 if heading==1:
-                    subtopic_mapping.append({"heading":elements[current][4:],"level":1,"pgno":pg_cnt,"children":[]})
+                    parent+=1
+                    if parent//2 in question_content:
+                        question_content[parent//2]+=elements[next_element][3:]
+                    else:
+                        question_content[parent//2]=elements[next_element][3:]
+                    subtopic_mapping.append({"heading":elements[current][4:],"level":1,"pgno":pg_cnt,"children":[],"content":elements[next_element][3:],"parent":parent})
                 else:
                     x=subtopic_mapping[-1]
                     while(len(x)>=1):
                         if x["level"]==heading-1:
-                            x["children"].append({"heading":elements[current][4:],"level":heading,"pgno":pg_cnt,"children":[]})
+                            question_content[parent//2]+=elements[next_element][3:]
+                            x["children"].append({"heading":elements[current][4:],"level":heading,"pgno":pg_cnt,"children":[],"content":elements[next_element][3:],"parent":parent})
                             break
                         else:
                             if not x["children"] or x["children"][-1]["level"]==heading:
-                                x["children"].append({"heading":elements[current][4:],"level":heading,"pgno":pg_cnt,"children":[]})
+                                question_content[parent//2]+=elements[next_element][3:]
+                                x["children"].append({"heading":elements[current][4:],"level":heading,"pgno":pg_cnt,"children":[],"content":elements[next_element][3:],"parent":parent})
                                 break
                             else:
                                 x=x["children"][-1]
@@ -334,12 +344,17 @@ def pptgen(elements,filename,tid):
                 pg_cnt+=1
                 heading=int(elements[current][2])
                 if heading==1:
-                    subtopic_mapping.append({"heading":elements[current][4:],"level":1,"pgno":pg_cnt,"children":[]})
+                    parent+=1
+                    if parent//2 in question_content:
+                        question_content[parent//2]+=''
+                    else:
+                        question_content[parent//2]=''
+                    subtopic_mapping.append({"heading":elements[current][4:],"level":1,"pgno":pg_cnt,"children":[],"content":"","parent":parent})
                 else:
                     x=subtopic_mapping[-1]
                     while(len(x)>=1):
                         if x["level"]==heading-1:
-                            x["children"].append({"heading":elements[current][4:],"level":heading,"pgno":pg_cnt,"children":[]})
+                            x["children"].append({"heading":elements[current][4:],"level":heading,"pgno":pg_cnt,"children":[],"content":"","parent":parent})
                             break
                         else:
                             x=x["children"][-1]
@@ -351,6 +366,7 @@ def pptgen(elements,filename,tid):
         next_element+=1
   
   else:
+        #TO BE LOOKED INTO  
         print("here")
         title_text=topic_gen(elements[0][3:])
         subtopic_mapping.append({"heading":title_text.title(),"level":1,"pgno":1,"children":[]})
@@ -400,4 +416,4 @@ def pptgen(elements,filename,tid):
   #cv.ppt_presenter(filename,pdf_name,video_name,slide_to_voice)
   #cv.ppt_presenter('D:\College\Capstone project\Create-tutorials-from-text-file\scripts\static\downloads\hi_summary.pptx','D:\College\Capstone project\Create-tutorials-from-text-file\scripts\static\downloads\hi_summary.pdf','D:\College\Capstone project\Create-tutorials-from-text-file\scripts\static\downloads\hi_summary.mp4',slide_to_voice)
   #cv.PPTtoPDF(ppt_path,pdf_path)
-  return {'ppt_path':ppt_path,'pdf_path':pdf_path,'mapping':subtopic_mapping}
+  return {'ppt_path':ppt_path,'pdf_path':pdf_path,'mapping':subtopic_mapping,'question_content':question_content}

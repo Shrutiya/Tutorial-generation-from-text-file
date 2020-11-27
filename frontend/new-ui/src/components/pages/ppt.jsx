@@ -13,6 +13,9 @@ import 'react-pro-sidebar/dist/css/styles.css';
 import Iframe from 'react-iframe'
 import './Upload.css'
 import jwt_decode from 'jwt-decode'
+import Content from './content';
+import './content.css'
+
 class ppt extends React.Component {
     constructor(props){
         super(props);
@@ -20,14 +23,32 @@ class ppt extends React.Component {
         this.openFullscreen=this.openFullscreen.bind(this);
         this.print=this.print.bind(this);
         this.state={
-            hierarchy: this.props.location.mapping,
-            src:"http://localhost:5000/return-files1?pptpath="+this.props.location.pdf_path+"#page=1",
+            hierarchy: '',
+            // hierarchy: [{'heading': 'What is Information Retrieval?', 'level': 1, 'pgno': 1, 'children': [], 'content': 'Information Retrieval   can be defined as a software program that deals with the organization, storage, retrieval, and evaluation of information from document repositories, particularly textual information. Information Retrieval is the activity of obtaining material that can usually be documented on an unstructured nature   i.e. usually text which satisfies an information need from within large collections which is stored on computers. For example, Information Retrieval can be when a user enters a query into the system.   Not only librarians, professional searchers, etc engage themselves in the activity of  information retrieval but nowadays hundreds of millions of people engage in IR every  day when they use web search engines. Information Retrieval is believed to be the  dominant form of Information access. The IR system assists the users in finding the  information they require but it does not explicitly return the answers to the question. It  notifies regarding the existence and location of documents that might consist of the  required information. Information retrieval also extends support to users in browsing or  filtering document collection or processing a set of retrieved documents. The system searches over billions of documents stored on millions of computers. A spam filter,  manual or automatic means are provided by Email program for classifying the mails so  that it can be placed directly into particular folders. ', 'parent': 0}, {'heading': 'What is an IR Model? ', 'level': 1, 'pgno': 3, 'children': [], 'content': 'An Information Retrieval (IR) model selects and ranks the document that is required by  the user or the user has asked for in the form of a query. The documents and the  queries are represented in a similar manner, so that document selection and ranking  can be formalized by a matching function that returns a retrieval status value (RSV) for  each document in the collection. Many of the Information Retrieval systems represent  document contents by a set of descriptors, called terms, belonging to a vocabulary V. ', 'parent': 1}, {'heading': 'Components of Information Retrieval/ IR Model ', 'level': 1, 'pgno': 4, 'children': [{'heading': ' Acquisition', 'level': 2, 'pgno': 5, 'children': [], 'content': '  In this step, the selection of documents and other objects from various web resources that consist of text-based documents takes place. The required data is collected by web crawlers and stored in the database. ', 'parent': 2}, {'heading': ' Representation', 'level': 2, 'pgno': 6, 'children': [], 'content': '  It consists of indexing that contains free-text terms, controlled vocabulary, manual & automatic techniques as well. example: Abstracting contains summarizing and Bibliographic description that contains author, title, sources, data, and metadata. ', 'parent': 2}, {'heading': ' File Organization', 'level': 2, 'pgno': 7, 'children': [], 'content': '  There are two types of file organization methods. i.e. Sequential : It contains documents by document data.   Inverted : It contains term by term, list of records under each term.  Combination  of both. ', 'parent': 2}, {'heading': ' Query', 'level': 2, 'pgno': 8, 'children': [], 'content': '  An IR process starts when a user enters a query into the system. Queries are formal statements of information needs, for example, search strings in web search engines. In information retrieval, a query does not uniquely identify a single object in the collection. Instead, several objects may match the query, perhaps with different degrees of relevancy. ', 'parent': 2}], 'content': '', 'parent': 2}, {'heading': 'User Interaction With Information Retrieval System ', 'level': 1, 'pgno': 9, 'children': [], 'content': 'The User Task:  The information first is supposed to be translated into a query by the  user. In the information retrieval system, there is a set of words that convey the  semantics of the information that is required whereas, in a data retrieval system, a  query expression is used to convey the constraints which are satisfied by the objects.  Example: A user wants to search for something but ends up searching with another  thing. This means that the user is browsing and not searching.', 'parent': 3}],
+            src:'',
             index:0,
-            ppt_path:"http://localhost:5000/return-files?pptpath="+this.props.location.ppt_path,
-            mcq:this.props.location.mcq,
-            id:this.props.location.tid
+            ppt_path:'',
+            // mcq:this.props.location.mcq,
+            id:this.props.location.tid,
+            topic:0
         }
     }
+    componentWillMount(){
+      var topic=this.props.location.topic;
+      if(topic){this.setState({topic:topic})}
+      fetch('http://localhost:5000/get_tutorial_info', {
+      method: 'POST',
+      body:JSON.stringify({'tid':this.state.id}),
+      headers: new Headers({
+        "content-type": "application/json"
+      })
+    }).then((response) => {
+      response.json().then((body) => {
+        console.log(body);
+        this.setState({ppt_path:"http://localhost:5000/return-files?pptpath="+body.ppt_path,src:"http://localhost:5000/return-files?pptpath="+body.pdf_path+"#page=1",hierarchy:body.subtopic_mapping});
+        console.log(this.state);
+    });
+    })}
     openFullscreen(ev) {
         ev.preventDefault();
         // console.log(elem.parentNode.childNodes)
@@ -42,37 +63,38 @@ class ppt extends React.Component {
           elem.msRequestFullscreen();
         }
       } 
-    print(pgno){
+    print(index){
         // var x=document.getElementById("button1");
         // console.log(x);
         // document.getElementById("myId").src="http://localhost:5000/return-files1?pptpath=D:/College/Capstone Project/Final/backend/Create-tutorials-from-text-file/scripts/ppt_trial.pdf#page=9";
-        var x=this.state.src.split("#")[0];
-        this.setState({src:x+"#page="+pgno.toString(),index:this.state.index+1})
+        // var x=this.state.src.split("#")[0];
+        // this.setState({src:x+"#page="+pgno.toString(),index:this.state.index+1})
+        console.log(index);
+        this.setState({topic:index,index:this.state.index+1})
         // document.getElementById("button1").contentDocument.location.reload(true);
     }
     render(){
         const TreeRecursive = ({ data }) => {
             // loop through the data
-            return data.map(item => {
+            return data.map((item,index) => {
               // if its a file render <File />
               if (item["children"].length == 0) {
-                return <MenuItem onClick={() => this.print(item["pgno"])}>{item["heading"]}</MenuItem>;
+                return <MenuItem onClick={() => this.print(item["parent"])}>{item["heading"]}</MenuItem>;
               }
               // if its a folder render <Folder />
               else {
                 return (
                   <SubMenu title={item["heading"]} onClick={() => this.print(item["pgno"])}>
-                    {/* Call the <TreeRecursive /> component with the current item.childrens */}
-                    <TreeRecursive data={item["children"]} />
+                    <TreeRecursive data={item["children"]}/>
                   </SubMenu>
                 );
               }
             });
           };
           // var { tutorial_id } = useParams();
-        console.log(this.props.match);
-        const student=<div><Link to={{pathname:"/student_assessments/", data:this.state.mcq, tid: this.state.id}}><button  className="btn-secondary btn-lg" style={{color:"black"}}><h5>Assessments</h5></button></Link></div>;
-    const teacher=<div><Link to={{pathname:"/assessments", data:this.state.mcq}}><button  className="btn-secondary btn-lg" style={{color:"black"}}><h5>Assessments</h5></button></Link></div>;
+        const Student=(<Link to={{pathname:"/student_assessments/", data:this.state.topic==this.state.hierarchy.length-1?((this.state.topic+1)/2|0):((this.state.topic+1)/2|0)-1, tid: this.state.id, topic:this.state.topic, topic_length:this.state.hierarchy.length}}><button  className="btn-secondary btn-lg button2">Next &raquo;</button></Link>);
+    const teacher=<Link to={{pathname:"/assessments",tid:this.state.id}}><button  className="btn-secondary btn-lg" style={{color:"black"}}>Assessment</button></Link>;
+    if(this.state.hierarchy){
   return (
     
   	 <div class="row">
@@ -80,9 +102,6 @@ class ppt extends React.Component {
 	     <ProSidebar>
 		<Menu iconShape="square" id="sidebar">
 	<TreeRecursive data={this.state.hierarchy}/>
-    {/* <Link to={{pathname:"/assessments"}}>
-        <MenuItem>Assessments</MenuItem>
-      </Link> */}
 	</Menu>
 	</ProSidebar>
 	     </div> 
@@ -91,7 +110,7 @@ class ppt extends React.Component {
                    <br></br>
                <h5>Click here to download PPT with voiceover <button  className="btn-secondary btn-lg"><a href={this.state.ppt_path} download style={{color: "black"}}>Download PPT</a></button></h5>
                <br></br>
-      <div class="embed-responsive embed-responsive-16by9">
+      {/* <div class="embed-responsive embed-responsive-16by9">
 	                        
 	                       	
         <a  class="elem-fullscreen-link" onClick={this.openFullscreen} id="button">
@@ -101,9 +120,19 @@ class ppt extends React.Component {
         </iframe>
         <h5 style={{color:"black"}}>Click here to {jwt_decode(localStorage.usertoken).identity.role==="student"?"take":"view"} assessments{jwt_decode(localStorage.usertoken).identity.role==="student"?student:teacher}</h5> 
         </div>
+         */}
         
 	      <hr/>
         </center>
+        <Content key={this.state.index} heading={this.state.hierarchy[this.state.topic]}></Content>
+        <hr></hr>
+        <button onClick={() => this.state.topic>0?this.print(this.state.topic-1):null} className="btn-secondary btn-lg button1">&laquo; Previous</button>
+        <p style={{display:"inline"}} className="middle">{(this.state.topic+1)%2==0?"Assessment coming up":null}</p>
+        {jwt_decode(localStorage.usertoken).identity.role==="student" && (this.state.topic+1)%2==0 || (this.state.topic==this.state.hierarchy.length-1)?(Student):(<button onClick={() => this.state.topic+1<this.state.hierarchy.length?this.print(this.state.topic+1):null} className="btn-secondary btn-lg button2">Next &raquo;</button>)}
+        <br></br>
+        <hr></hr>
+        <br></br>
+        <center><h5 style={{color:"black"}}>{jwt_decode(localStorage.usertoken).identity.role==="teacher"?"Click to view Assessment":null}  {jwt_decode(localStorage.usertoken).identity.role==="student"?null:teacher}</h5> </center>
     {/* <Iframe src={this.state.src}
         width="100%"
         height="100%"
@@ -140,6 +169,9 @@ class ppt extends React.Component {
 	    </div>
 	  </div>
   	)
+}
+else{
+  return null;}
 }
 }
 
