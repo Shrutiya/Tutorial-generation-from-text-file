@@ -1,0 +1,30 @@
+torch==1.5.0+cpu torchvision==0.6.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+transformers==3.0.2
+pytorch_lightning==0.8.1
+sense2vec==1.0.2
+strsim==0.0.3
+six==1.12.0
+networkx==2.4.0
+numpy==1.16.3
+scipy==1.4.1
+scikit-learn==0.22.1
+unidecode==1.1.1
+future==0.18.2
+joblib==0.14.1
+spacy==2.2.4
+pytz==2020.1
+python-dateutil==2.8.1
+boto3==1.14.40
+flashtext==2.7
+pandas==1.1.1
+sense2vec==1.0.2
+git+https://github.com/boudinfl/pke.git
+flask
+
+
+Commands:
+py -m nltk.downloader universal_tagset
+py -m spacy download en
+wget https://github.com/explosion/sense2vec/releases/download/v1.0.0/s2v_reddit_2015_md.tar.gz -Outfile reddit.tar.gz
+tar -xvf  s2v_reddit_2015_md.tar.gz
+git clone https://github.com/ramsrigouthamg/Questgen.ai/Questgen

@@ -7,6 +7,7 @@ import Profile from './Profile';
 import Assessment from './Assessment';
 import Upload from './Upload';
 import StudentAssessment from './StudentAssessment';
+import Feedback from './feedback';
 export default function Products() {
   return (
   	 <div class="row">
@@ -41,6 +42,7 @@ export default function Products() {
           <Route path='/profile' component={Profile} />
           <Route path='/assessments' component={Assessment} />
           <Route path='/student_assessments' component={StudentAssessment} />
+          <Route path='/collect_feedback' component={Feedback} />
         </Switch>
 	      <hr/>
         </center>

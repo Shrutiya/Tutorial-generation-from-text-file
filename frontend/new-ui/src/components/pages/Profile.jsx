@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import jwt_decode from 'jwt-decode'
 import CardItem from '../CardItem';
+import Tutorialscore from './tutscore';
 import '../Cards.css';
 class Profile extends Component {
   constructor() {
@@ -11,7 +12,7 @@ class Profile extends Component {
       role: '',
       errors: {},
       tutorials:{},
-      items:[]
+      items:[],
     }
     this.numberRange=this.numberRange.bind(this);
   }
@@ -68,7 +69,25 @@ class Profile extends Component {
     });
   })
   }
+  else{
+    fetch('http://localhost:5000/student-profile', {
+      method: 'POST',
+      body:JSON.stringify({'username':this.state.username}),
+      headers: new Headers({
+        "content-type": "application/json"
+      }),
+    }).then((response) => {
+      response.json().then((body) => {
+        this.setState({scores:body})
+  
+  var l=[<table></table>];
+  for(var i=0;i<this.state.scores.length;i++){
+    l.push(<div><Tutorialscore user_score={this.state.scores[i]["user_score"]} max_score={this.state.scores[i]["max_score"]} tutorial_name={this.state.scores[i]["Tutorial_name"]}/><hr></hr></div>)
+  }
+  this.setState({items:l});
+})})
 }
+  }
 
   componentWillMount(){
     const token = localStorage.usertoken
@@ -89,15 +108,15 @@ class Profile extends Component {
       <div className='cards__wrapper'>
         {this.state.items}
       </div></div>
-    const student=<div><h3>Your Progress</h3></div>
+    const student=<div><h3>Your Progress</h3><hr></hr>{this.state.items}</div>
     return (
       <div className="container">
         <center>
-        <div className="">
+        <div>
           <div className="col-sm-8 mx-auto">
             <center><h1 className="text-body">PROFILE</h1></center>
           </div>
-          <table className="table col-md-6 mx-auto">
+          <table className="table col-md-6 mx-auto" align="center">
             <tbody className="text-body">
               <tr>
                 <td>Username</td>
@@ -105,15 +124,14 @@ class Profile extends Component {
               </tr>
               <tr>
                 <td>Role</td>
-                <td>{this.state.role}</td>
+                <td>{this.state.role==="student"?"subscriber":"generator"}</td>
               </tr>
             </tbody>
           </table>
         </div>
         </center>
         <br></br>
-        {this.state.role==="teacher"?teacher
-        :student}
+        {this.state.role==="teacher"?teacher:student}
       </div>
     )
   }

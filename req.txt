@@ -1,0 +1,22 @@
+Flask==1.1.2
+fitz==0.0.1.dev2
+PyMuPDF==1.18.2
+nltk==3.5
+python-pptx==0.6.18
+pdf2image==1.14.0
+gTTS==2.1.1
+spacy==2.2.4
+Flask-Cors==3.0.9
+Flask-Bcrypt==0.7.1
+Flask-JWT-Extended==3.24.1
+Flask-SQLAlchemy==2.4.4
+torch==1.5.0+cpu torchvision==0.6.0+cpu -f https://download.pytorch.org/whl/torch_stable.html   //check
+transformers==3.0.2
+boto3==1.14.40
+sense2vec==1.0.2
+git+https://github.com/boudinfl/pke.git //check
+strsim==0.0.3
+flashtext==2.7
+tika==1.24
+
+

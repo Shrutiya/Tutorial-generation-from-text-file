@@ -6,12 +6,12 @@ from subprocess import call
 from pdf2image import convert_from_path
 from pptx import Presentation
 from gtts import gTTS
-import pythoncom
+#import pythoncom
 
 FFMPEG_NAME = r'C:\Users\Kritika Kapoor\Documents\ShareX\Tools\ffmpeg.exe'
 
 #import comtypes.client
-import win32com.client
+#import win32com.client
 
 def PPTtoPDF(inputFileName, outputFileName, formatType = 32):
     #CoInitialize()

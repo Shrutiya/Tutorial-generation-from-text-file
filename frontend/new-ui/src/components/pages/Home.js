@@ -8,7 +8,9 @@ function Home() {
   return (
     <>
       <HeroSection />
-      <Cards />
+      <div id="tutorial">
+      <Cards/>
+      </div>
       <Footer />
     </>
   );

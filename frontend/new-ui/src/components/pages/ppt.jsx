@@ -3,11 +3,7 @@ import './Products.css';
 import CardItem from './CardItem';
 import Tutorial from './Tutorial';
 import { BrowserRouter as Router, Switch, Route, Link, useParams} from 'react-router-dom';
-import Profile from './Profile';
-import Assessment from './Assessment';
-import Upload from './Upload';
-import Sidebar from '../Sidebar';
-import '../Sidebar.css';
+// import '../Sidebar.css';
 import { ProSidebar, Menu, MenuItem, SubMenu } from 'react-pro-sidebar';
 import 'react-pro-sidebar/dist/css/styles.css';
 import Iframe from 'react-iframe'
@@ -30,12 +26,11 @@ class ppt extends React.Component {
             ppt_path:'',
             // mcq:this.props.location.mcq,
             id:this.props.location.tid,
+            main_heading:"<h1>",
             topic:0
         }
     }
     componentWillMount(){
-      var topic=this.props.location.topic;
-      if(topic){this.setState({topic:topic})}
       fetch('http://localhost:5000/get_tutorial_info', {
       method: 'POST',
       body:JSON.stringify({'tid':this.state.id}),
@@ -73,42 +68,59 @@ class ppt extends React.Component {
         this.setState({topic:index,index:this.state.index+1})
         // document.getElementById("button1").contentDocument.location.reload(true);
     }
+    check_children(children){
+      for(var i=0;i<children.length;i++){
+        if(children[i].heading[1]=="h")
+          return false;
+      }
+      return true;
+    }
     render(){
         const TreeRecursive = ({ data }) => {
             // loop through the data
             return data.map((item,index) => {
               // if its a file render <File />
-              if (item["children"].length == 0) {
-                return <MenuItem onClick={() => this.print(item["parent"])}>{item["heading"]}</MenuItem>;
+              if (item["children"].length == 0 || this.check_children(item["children"])) {
+                if(item["heading"][1]=="h"){
+                return <MenuItem onClick={() => this.print(3)} style={{fontSize:"20px",color:"#f9f9f9d7"}}>{item["content"]}</MenuItem>;}
               }
               // if its a folder render <Folder />
               else {
                 return (
-                  <SubMenu title={item["heading"]} onClick={() => this.print(item["pgno"])}>
-                    <TreeRecursive data={item["children"]}/>
+                  <SubMenu title={item["content"]} onClick={() => this.print(item["pgno"])}  style={{fontSize:"20px",color:"#f9f9f9d7"}}>
+                    <TreeRecursive data={item["children"].reverse()}/>
                   </SubMenu>
                 );
               }
             });
           };
           // var { tutorial_id } = useParams();
-        const Student=(<Link to={{pathname:"/student_assessments/", data:this.state.topic==this.state.hierarchy.length-1?((this.state.topic+1)/2|0):((this.state.topic+1)/2|0)-1, tid: this.state.id, topic:this.state.topic, topic_length:this.state.hierarchy.length}}><button  className="btn-secondary btn-lg button2">Next &raquo;</button></Link>);
-    const teacher=<Link to={{pathname:"/assessments",tid:this.state.id}}><button  className="btn-secondary btn-lg" style={{color:"black"}}>Assessment</button></Link>;
+        const Student=(<Link to={{pathname:"/student_assessments/", data:this.state.topic==this.state.hierarchy.length-1?this.state.hierarchy.length%2==0?((this.state.topic+1)/2|0)-1:((this.state.topic+1)/2|0):((this.state.topic+1)/2|0)-1, tid: this.state.id, topic:this.state.topic, topic_length:this.state.hierarchy.length}}><button  className="btn-secondary btn-lg button2">Next &raquo;</button></Link>);
+    const teacher=<Link to={{pathname:"/assessments",tid:this.state.id}}><button  className="btn-secondary btn-lg" style={{color:"black"}}>View Assessment</button></Link>;
     if(this.state.hierarchy){
   return (
     
   	 <div class="row">
-	     <div class="col-2">
-	     <ProSidebar>
+	     <div class="col-3">
+	     <ProSidebar width="325px" toggled="true">
 		<Menu iconShape="square" id="sidebar">
 	<TreeRecursive data={this.state.hierarchy}/>
 	</Menu>
 	</ProSidebar>
 	     </div> 
-	     <div class="col-8"> 
+	     <div class="col-7"> 
                <center>
                    <br></br>
-               <h5>Click here to download PPT with voiceover <button  className="btn-secondary btn-lg"><a href={this.state.ppt_path} download style={{color: "black"}}>Download PPT</a></button></h5>
+               <h5>
+                 <button  className="btn-secondary btn-lg">
+                   <a href={this.state.ppt_path} download style={{color: "black"}}>
+                     Download PPT
+                   </a>
+                 </button>&nbsp;
+                 {/* <Link to={{pathname:"/picture_gallery/"}}><button  className="btn-secondary btn-lg">
+                     Picture gallery
+                 </button></Link> */}
+               </h5>
                <br></br>
       {/* <div class="embed-responsive embed-responsive-16by9">
 	                        
@@ -124,15 +136,15 @@ class ppt extends React.Component {
         
 	      <hr/>
         </center>
-        <Content key={this.state.index} heading={this.state.hierarchy[this.state.topic]}></Content>
+        <Content key={this.state.index} heading={this.state.hierarchy[0]}></Content>
         <hr></hr>
         <button onClick={() => this.state.topic>0?this.print(this.state.topic-1):null} className="btn-secondary btn-lg button1">&laquo; Previous</button>
-        <p style={{display:"inline"}} className="middle">{(this.state.topic+1)%2==0?"Assessment coming up":null}</p>
-        {jwt_decode(localStorage.usertoken).identity.role==="student" && (this.state.topic+1)%2==0 || (this.state.topic==this.state.hierarchy.length-1)?(Student):(<button onClick={() => this.state.topic+1<this.state.hierarchy.length?this.print(this.state.topic+1):null} className="btn-secondary btn-lg button2">Next &raquo;</button>)}
+        <p style={{display:"inline"}} className="middle">{(this.state.topic+1)%2==0&&jwt_decode(localStorage.usertoken).identity.role==="student"?"Assessment coming up":null}</p>
+        {jwt_decode(localStorage.usertoken).identity.role==="student" && ((this.state.topic+1)%2==0 || (this.state.topic==this.state.hierarchy.length-1))?(Student):(<button onClick={() => this.state.topic+1<this.state.hierarchy.length?this.print(this.state.topic+1):null} className="btn-secondary btn-lg button2">Next &raquo;</button>)}
         <br></br>
         <hr></hr>
         <br></br>
-        <center><h5 style={{color:"black"}}>{jwt_decode(localStorage.usertoken).identity.role==="teacher"?"Click to view Assessment":null}  {jwt_decode(localStorage.usertoken).identity.role==="student"?null:teacher}</h5> </center>
+        <center><h5 style={{color:"black"}}>{jwt_decode(localStorage.usertoken).identity.role==="teacher"?null:null}  {jwt_decode(localStorage.usertoken).identity.role==="student"?null:teacher}</h5> </center>
     {/* <Iframe src={this.state.src}
         width="100%"
         height="100%"

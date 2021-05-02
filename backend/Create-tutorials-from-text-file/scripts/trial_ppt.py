@@ -4,6 +4,8 @@ import json
 import summary_gen as sg
 from pptx.util import Pt
 import os
+from gtts import gTTS 
+
 
 def fonts(doc, granularity=False):
     """Extracts fonts and their usage in PDF documents.
@@ -23,6 +25,7 @@ def fonts(doc, granularity=False):
             if b['type'] == 0:  # block contains text
                 for l in b["lines"]:  # iterate through the text lines
                     for s in l["spans"]:  # iterate through the text spans
+                        s['size']=round(s['size'])
                         if granularity:
                             identifier = "{0}_{1}_{2}_{3}".format(s['size'], s['flags'], s['font'], s['color'])
                             styles[identifier] = {'size': s['size'], 'flags': s['flags'], 'font': s['font'],
@@ -75,7 +78,7 @@ def font_tags(font_counts, styles):
     return size_tag
 
 
-def headers_para(doc, size_tag):
+def headers_para(doc, size_tag, pic_location):
     """Scrapes headers & paragraphs from PDF and return texts with element tags.
     :param doc: PDF document to iterate through
     :type doc: <class 'fitz.fitz.Document'>
@@ -88,7 +91,7 @@ def headers_para(doc, size_tag):
     first = True  # boolean operator for first header
     previous_s = {}  # previous span
     block_string = ""
-    for page in doc:
+    for pgno,page in enumerate(doc):
         blocks = page.getText("dict")["blocks"]
         #print("Blocks --------- ",blocks)
         for b in blocks:  # iterate through the text blocks
@@ -100,6 +103,7 @@ def headers_para(doc, size_tag):
                 for l in b["lines"]:  # iterate through the text lines
                     for s in l["spans"]:  # iterate through the text spans
                         #print(s)
+                        s['size']=round(s['size'])
                         if len(s['text'])>1 and s['text'].strip():  # removing whitespaces:
                             s['text']=s['text'].encode('ascii','ignore').decode('utf-8')
                             if first:
@@ -129,11 +133,23 @@ def headers_para(doc, size_tag):
 
                 #header_para.append(block_string)
                 #print("**************")
+        for imgno,img in enumerate(doc.getPageImageList(pgno)):
+            print("img found in ",pgno)
+            xref = img[0]
+            pix = fitz.Pixmap(doc, xref)
+            if pix.n < 5:       # this is GRAY or RGB
+                pix.writePNG(pic_location+"p%s-%s.png" % (pgno, imgno))
+            else:               # CMYK: convert to RGB first
+                pix1 = fitz.Pixmap(fitz.csRGB, pix)
+                pix1.writePNG(pic_location+"p%s-%s.png" % (pgno, imgno))
+                pix1 = None
+            pix = None  
+            header_para.append("<img> p%s-%s.png" % (pgno, imgno))
     header_para.append(block_string)
     return header_para
 
 
-def preprocessing(filename):
+def preprocessing(filename, pic_location):
 
     document = filename
     doc = fitz.open(document)
@@ -142,7 +158,7 @@ def preprocessing(filename):
     #print(font_counts,styles)
     size_tag = font_tags(font_counts, styles)
     #print(size_tag)
-    elements = headers_para(doc, size_tag)
+    elements = headers_para(doc, size_tag,pic_location)
     #print(elements)
     with open("doc.json", 'w') as json_out:
         json.dump(elements, json_out)
@@ -262,7 +278,7 @@ def topic_gen(text):
         return words1['term'][0]
     
 
-def pptgen(elements,filename,tid):
+def pptgen(elements,filename,tid, pic_location):
 
   
   from pptx import Presentation,util
@@ -278,44 +294,83 @@ def pptgen(elements,filename,tid):
   parent=-1
   content=''
   question_content={}
+  print(elements)
   if len(elements)>1:
     current=0
     next_element=1
+    text=''
     while(next_element<len(elements)):
-        if elements[next_element][:3]=="<p>":
+        print(subtopic_mapping)
+        if elements[next_element][:5]=="<img>":
+            print(subtopic_mapping)
+            previous=subtopic_mapping
+            child=previous[-1]
+            while(child and child["heading"]):
+                previous=child
+                if not previous["children"]:
+                    break
+                child=previous["children"][-1]
+            previous["children"].append({"heading":'',"level":0,"pgno":pg_cnt,"children":[],"content":os.path.abspath(pic_location+elements[next_element][6:]),"parent":'',"audio_link":''})
+            current-=1
+        elif elements[next_element][:3]=="<p>" or elements[next_element][:2]=="<s":
+                if elements[next_element][:3]=="<p>":
+                    prefix=3
+                elif elements[next_element][:2]=="<s":
+                    prefix=elements[next_element].index('>')+1
                 pg_cnt+=1
+                if elements[current][:3]=="<p>" or elements[current][:2]=="<s":
+                    current=last_encountered_heading
+                print(elements[current])
                 heading=int(elements[current][2])
                 if heading==1:
+                    last_encountered_heading=current
+                    if subtopic_mapping:
+                        myobj = gTTS(text=text, lang='en', slow=False)
+                        location="static/voiceovers/"+str(tid)+"voiceover_"+str(len(subtopic_mapping))+".mp3"
+                        myobj.save(os.path.abspath(location))
+                        subtopic_mapping[-1]["audio_link"]=os.path.abspath(location)
+                        text=''
                     parent+=1
                     if parent//2 in question_content:
-                        question_content[parent//2]+=elements[next_element][3:]
+                        question_content[parent//2]+=elements[next_element][prefix:]
                     else:
-                        question_content[parent//2]=elements[next_element][3:]
-                    subtopic_mapping.append({"heading":elements[current][4:],"level":1,"pgno":pg_cnt,"children":[],"content":elements[next_element][3:],"parent":parent})
+                        question_content[parent//2]=elements[next_element][prefix:]
+                    subtopic_mapping.append({"heading":elements[current][4:],"level":1,"pgno":pg_cnt,"children":[],"content":elements[next_element][prefix:],"parent":parent,"audio_link":''})
+                    text+=(elements[current][4:]+elements[next_element][prefix:])
                 else:
-                    x=subtopic_mapping[-1]
-                    while(len(x)>=1):
-                        if x["level"]==heading-1:
-                            question_content[parent//2]+=elements[next_element][3:]
-                            x["children"].append({"heading":elements[current][4:],"level":heading,"pgno":pg_cnt,"children":[],"content":elements[next_element][3:],"parent":parent})
-                            break
-                        else:
-                            if not x["children"] or x["children"][-1]["level"]==heading:
-                                question_content[parent//2]+=elements[next_element][3:]
-                                x["children"].append({"heading":elements[current][4:],"level":heading,"pgno":pg_cnt,"children":[],"content":elements[next_element][3:],"parent":parent})
+                    last_encountered_heading=current
+                    text+=(elements[current][4:]+elements[next_element][prefix:])
+                    if subtopic_mapping:
+                        x=subtopic_mapping[-1]
+                        while(len(x)>=1):
+                            if x["level"]==heading-1:
+                                question_content[parent//2]+=elements[next_element][prefix:]
+                                x["children"].append({"heading":elements[current][4:],"level":heading,"pgno":pg_cnt,"children":[],"content":elements[next_element][prefix:],"parent":parent})
                                 break
                             else:
-                                x=x["children"][-1]
-                summary=sg.processing(elements[next_element][3:])[0]
+                                if not x["children"] or x["children"][-1]["level"]==heading:
+                                    question_content[parent//2]+=elements[next_element][prefix:]
+                                    x["children"].append({"heading":elements[current][4:],"level":heading,"pgno":pg_cnt,"children":[],"content":elements[next_element][prefix:],"parent":parent})
+                                    break
+                                else:
+                                    x=x["children"][-1]
+                    else:
+                        subtopic_mapping.append({"heading":elements[current][4:],"level":1,"pgno":pg_cnt,"children":[],"content":elements[next_element][prefix:],"parent":parent,"audio_link":''})
+                        parent+=1
+                        if parent//2 in question_content:
+                            question_content[parent//2]+=elements[next_element][prefix:]
+                        else:
+                            question_content[parent//2]=elements[next_element][prefix:]
+                summary=sg.processing(elements[next_element][prefix:])[0]
                 summary = summary.split('.')
                 summary.pop()
-
                 for i in range(len(summary)):
                     if summary[i][1]=="\n":
                         summary[i]=summary[i][2:]+"."
                     else:
                         summary[i]=summary[i][1:]+"."
                 for i in range(0,len(summary),3):
+                    x=min(i+3,len(summary))
                     slide = prs.slides.add_slide(title_slide_layout)
                     title = slide.shapes.title
                     if i==0:
@@ -323,14 +378,20 @@ def pptgen(elements,filename,tid):
                     else:
                         pg_cnt+=1
                         title.text=elements[current][4:]+" contd."
+                    voice_text=title.text+' '.join(summary[i:x])
+                    myobj = gTTS(text=voice_text, lang='en', slow=False) 
+                    myobj.save("voiceover.mp3")
                     subtitle = slide.placeholders[1]
-                    left = top = width = height = util.Inches(1.0)
+                    # left = top = width = height = util.Inches(1.0)
                     shapes = slide.shapes
                     body_shape = shapes.placeholders[1]
                     tf = body_shape.text_frame
+                    # movie = slide.shapes.add_movie("voiceover.mp3", 
+                    #            left , top , width , height, 
+                    #            poster_frame_image=None, 
+                    #            mime_type='video/unknown')
                     # tf.fit_text()# = MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
                     title_shape = shapes.title
-                    x=min(i+3,len(summary))
                     for j in range(i,x):
                         p = tf.add_paragraph()
                         p.text = summary[j]
@@ -341,17 +402,27 @@ def pptgen(elements,filename,tid):
                     #print("^^^^^^^^^^^^^^^^")
         else:
             if elements[current][:2]=="<h":
+                last_encountered_heading=current
+                print("hi",last_encountered_heading)
                 pg_cnt+=1
                 heading=int(elements[current][2])
                 if heading==1:
+                    if subtopic_mapping:
+                        myobj = gTTS(text=text, lang='en', slow=False)
+                        location="static/voiceovers/"+str(tid)+"voiceover_"+str(len(subtopic_mapping))+".mp3"
+                        myobj.save(os.path.abspath(location))
+                        subtopic_mapping[-1]["audio_link"]=os.path.abspath(location)
+                        text=''
                     parent+=1
                     if parent//2 in question_content:
                         question_content[parent//2]+=''
                     else:
                         question_content[parent//2]=''
-                    subtopic_mapping.append({"heading":elements[current][4:],"level":1,"pgno":pg_cnt,"children":[],"content":"","parent":parent})
+                    subtopic_mapping.append({"heading":elements[current][4:],"level":1,"pgno":pg_cnt,"children":[],"content":"","parent":parent,"audio_link":''})
+                    text+=elements[current][4:]
                 else:
                     x=subtopic_mapping[-1]
+                    text+=(elements[current][4:])
                     while(len(x)>=1):
                         if x["level"]==heading-1:
                             x["children"].append({"heading":elements[current][4:],"level":heading,"pgno":pg_cnt,"children":[],"content":"","parent":parent})
@@ -361,10 +432,23 @@ def pptgen(elements,filename,tid):
                 slide = prs.slides.add_slide(title_layout)
                 title = slide.shapes.title
                 title.text = elements[current][4:]
+                voice_text=title.text
+                myobj = gTTS(text=voice_text, lang='en', slow=False) 
+                myobj.save("voiceover.mp3")
                 title.text_frame.paragraphs[0].font.size=Pt(60)
+                # movie = slide.shapes.add_movie("voiceover.mp3", 
+                #                left , top , width , height, 
+                #                poster_frame_image=None, 
+                #                mime_type='video/unknown')
         current+=1
+        if elements[current][:5]=="<img>":
+            current=next_element
         next_element+=1
-  
+    
+    myobj = gTTS(text=text, lang='en', slow=False)
+    location="static/voiceovers/"+str(tid)+"voiceover_"+str(len(subtopic_mapping))+".mp3"
+    myobj.save(location)
+    subtopic_mapping[-1]["audio_link"]=os.path.abspath(location)
   else:
         #TO BE LOOKED INTO  
         print("here")
@@ -390,7 +474,7 @@ def pptgen(elements,filename,tid):
                 title.text=title_text.title()
             else:
                 title.text=title_text.title()+" contd."
-            left = top = width = height = util.Inches(1.0)
+            # left = top = width = height = util.Inches(1.0)
             shapes = slide.shapes
             body_shape = shapes.placeholders[1]
             tf = body_shape.text_frame
@@ -401,7 +485,7 @@ def pptgen(elements,filename,tid):
                 p = tf.add_paragraph()
                 p.text = summary[j]
                 p.level=0
-            tf.fit_text(max_size=25)
+            #tf.fit_text()
                 
   ppt_path='static/downloads/'+tid+".pptx"
   prs.save(ppt_path)

@@ -150,7 +150,10 @@ class Sassessment extends React.Component{
         <center><h1>Your performance</h1></center>
         {this.state.completed?<Completed questions={this.state.completed}/>:null}
         <Result quizResult={this.state.score} full={this.state.total} />
-        {this.state.topic+1>=this.state.no_of_topics?(<h1>You've completed the tutorial</h1>):null}
+        {this.state.topic+1>=this.state.no_of_topics?(<div><h1>You've completed the tutorial</h1>
+        <br></br><Link to={{pathname:"/collect_feedback",tid:this.state.tid}}>
+      <button  className="btn-secondary btn-lg">Give feedback</button></Link></div>):null}
+        <br></br>
         <Link to={{pathname:"/ppt",topic:this.state.topic+1>=this.state.no_of_topics?0:this.state.topic+1,tid:this.state.tid}}>
       <button  className="btn-secondary btn-lg">Go back to tutorial</button></Link>
         </div>);

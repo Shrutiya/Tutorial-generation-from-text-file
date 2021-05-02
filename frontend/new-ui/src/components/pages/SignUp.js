@@ -9,7 +9,7 @@ class SignUp extends Component{
       username: '',
       email: '',
       password: '',
-      role: 'teacher',
+      role: 'student',
       errors: {}
     }
 
@@ -68,8 +68,8 @@ class SignUp extends Component{
                 <select className="form-control"
                   name="role" id="cars" placeholder="Select Role" value={this.state.role}
                   onChange={this.onChange}>
-                  <option value="teacher" defaultChecked>Teacher(Creator)</option>
-                  <option value="student">Student(Subscriber)</option>
+                    <option value="student" defaultChecked>Student(Subscriber)</option>
+                  <option value="teacher">Teacher(Creator)</option>
                 </select>
               </div>
               <div className="form-group">

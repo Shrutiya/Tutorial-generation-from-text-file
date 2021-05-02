@@ -50,7 +50,7 @@ class Cards extends React.Component {
     }
     this.setState({items:l});
         // this.setState({onsubmit:true});
-        console.log(this.state.items)
+        // console.log(this.state.items)
     });
   })
   }

@@ -19,6 +19,8 @@ class question_ans_module:
 
         output = qg.predict_mcq(self.payload)
         print(output)
+        if('questions' not in output):
+            return {}
         questions=output['questions']
         print("*************  ",len(questions),"   ***************")
         mcqs={}

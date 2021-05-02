@@ -5,9 +5,13 @@
     /* display: none; */
     
   }
-  .container1 {
+
+.container2{
+  background-color:  #f9f9f9cc;
+}
+  .containerxyz {
     display: flex;
-    /* flex-direction: row; */
+    flex-direction: row;
     /* visibility: hidden; */
     /* display: none; */
     margin-top: auto;
@@ -18,14 +22,14 @@
   
   .left-col {
     flex: 1;
-    /* display: flex; */
+    display: flex;
     justify-content: left;
     /* align-items: center; */
     background: #aaa;
     overflow-y: auto;
     line-height: 1.2;
     max-height: 50vh;
-    top: 10px;
+    top: 20px;
   }
   .left-col-heading {
     flex: 1;
@@ -45,7 +49,8 @@
     overflow-y: auto;
     line-height: 1.2;
     max-height: 50vh;
-    top: 10px;
+    top: 20px;
+    margin-left: 15px;
   }
   .center-col-heading{
     flex: 1;
@@ -55,5 +60,6 @@
     align-items: center;
     color: black;
     /* visibility: hidden; */
+    margin-left: 15px;
   }
   
